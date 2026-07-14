@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { Upload, Wand2, Plus } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -25,6 +26,21 @@ export function ImportarImagen() {
       <div>
         <h2 className="text-3xl font-bold text-foreground">Importar desde Imagen</h2>
         <p className="text-muted-foreground text-sm mt-1">Sube tus capturas de pantalla para extraer datos automáticamente con IA.</p>
+      </div>
+
+      {/* La API todavía no expone un endpoint de OCR: esta pantalla es una maqueta. */}
+      <div className="flex items-start gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3">
+        <span className="text-amber-500">⚠</span>
+        <div>
+          <p className="text-sm font-semibold text-foreground">Vista previa: sin conexión con la API</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            El backend no ofrece todavía importación por imagen (OCR). Para cargar apuestas de forma masiva usa{' '}
+            <Link to="/importar-xlsx" className="text-emerald-500 hover:underline">
+              Importar XLSX
+            </Link>
+            , que sí está conectado.
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-6">
