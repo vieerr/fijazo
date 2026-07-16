@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, PlusSquare, FileSpreadsheet, Image, History, BarChart2, Trophy } from 'lucide-react'
+import { LayoutDashboard, PlusSquare, History, BarChart2, Trophy } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useApiQuery } from '@/hooks/useApi'
 import { api } from '@/lib/api'
@@ -7,8 +7,6 @@ import { api } from '@/lib/api'
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/' },
   { label: 'Nuevo pronóstico', icon: PlusSquare, path: '/nuevo' },
-  { label: 'Importar XLSX', icon: FileSpreadsheet, path: '/importar-xlsx' },
-  { label: 'Importar Imagen', icon: Image, path: '/importar-imagen' },
   { label: 'Historial', icon: History, path: '/historial' },
   { label: 'Estadísticas', icon: BarChart2, path: '/estadisticas' },
   { label: 'Ranking', icon: Trophy, path: '/ranking' },
