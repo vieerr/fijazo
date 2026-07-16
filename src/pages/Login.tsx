@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
@@ -9,6 +9,23 @@ import { ApiError } from '@/lib/api'
 
 type Mode = 'login' | 'register'
 
+const LOCK_KEY = 'login_lockout'
+const FREE_ATTEMPTS = 3
+const BASE_LOCK_SECONDS = 5
+const MAX_LOCK_SECONDS = 300
+
+function readLockState(): { attempts: number; lockUntil: number } {
+  try {
+    return JSON.parse(localStorage.getItem(LOCK_KEY) || '') || { attempts: 0, lockUntil: 0 }
+  } catch {
+    return { attempts: 0, lockUntil: 0 }
+  }
+}
+
+function writeLockState(state: { attempts: number; lockUntil: number }) {
+  localStorage.setItem(LOCK_KEY, JSON.stringify(state))
+}
+
 export function Login() {
   const { user, loading: bootLoading, login, register } = useAuth()
   const [mode, setMode] = useState<Mode>('login')
@@ -17,19 +34,62 @@ export function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [lockRemaining, setLockRemaining] = useState(0)
+
+  useEffect(() => {
+    if (tickLock() <= 0) return
+    const iv = setInterval(() => {
+      if (tickLock() <= 0) clearInterval(iv)
+    }, 1000)
+    return () => clearInterval(iv)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   if (bootLoading) return null
   if (user) return <Navigate to="/" replace />
 
+  function tickLock() {
+    const { lockUntil } = readLockState()
+    const remaining = Math.max(0, Math.ceil((lockUntil - Date.now()) / 1000))
+    setLockRemaining(remaining)
+    return remaining
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+
+    if (mode === 'login' && tickLock() > 0) {
+      const iv = setInterval(() => {
+        if (tickLock() <= 0) clearInterval(iv)
+      }, 1000)
+      return
+    }
+
     setSubmitting(true)
     try {
-      if (mode === 'login') await login(email, password)
-      else await register(username, email, password)
+      if (mode === 'login') {
+        await login(email, password)
+        writeLockState({ attempts: 0, lockUntil: 0 })
+      } else {
+        await register(username, email, password)
+      }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Error inesperado')
+      if (mode === 'login') {
+        const { attempts } = readLockState()
+        const nextAttempts = attempts + 1
+        let lockUntil = 0
+        if (nextAttempts >= FREE_ATTEMPTS) {
+          const seconds = Math.min(
+            BASE_LOCK_SECONDS * 2 ** (nextAttempts - FREE_ATTEMPTS),
+            MAX_LOCK_SECONDS,
+          )
+          lockUntil = Date.now() + seconds * 1000
+        }
+        writeLockState({ attempts: nextAttempts, lockUntil })
+        tickLock()
+      }
     } finally {
       setSubmitting(false)
     }
@@ -98,9 +158,15 @@ export function Login() {
                 </p>
               )}
 
+              {mode === 'login' && lockRemaining > 0 && (
+                <p className="text-xs text-red-500 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">
+                  Demasiados intentos fallidos. Intenta de nuevo en {lockRemaining}s.
+                </p>
+              )}
+
               <Button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || (mode === 'login' && lockRemaining > 0)}
                 className="w-full bg-emerald-500 text-black hover:bg-emerald-400 font-semibold"
               >
                 {submitting && <Loader2 size={14} className="animate-spin" />}
