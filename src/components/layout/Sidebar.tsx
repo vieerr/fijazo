@@ -1,6 +1,8 @@
 import { Link, useLocation } from 'react-router-dom'
 import { LayoutDashboard, PlusSquare, FileSpreadsheet, Image, History, BarChart2, Trophy } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useApiQuery } from '@/hooks/useApi'
+import { api } from '@/lib/api'
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/' },
@@ -14,12 +16,15 @@ const navItems = [
 
 export function Sidebar() {
   const location = useLocation()
+  const rank = useApiQuery(() => api.ranks.me(), [])
 
   return (
     <aside className="flex flex-col w-64 h-screen bg-card border-r border-border flex-shrink-0">
       <div className="px-6 py-6">
         <h1 className="text-xl font-bold text-foreground tracking-tight">BetTracker</h1>
-        <p className="text-xs text-emerald-500 font-medium mt-0.5">Elite Rank</p>
+        <p className="text-xs text-emerald-500 font-medium mt-0.5">
+          {rank.data ? `${rank.data.current.icon} ${rank.data.current.name}` : '—'}
+        </p>
       </div>
 
       <nav className="flex-1 px-3 space-y-1">
